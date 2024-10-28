@@ -16,7 +16,7 @@ class DashboardController extends Controller
             return redirect()->to('/login');
         }
         $branchId = $session->get('branchId');
-        
+
         $ghlOpportunitiesModel = new GHLOpportunitiesModel();
         $paymentsModel = new PaymentsModel();
 
@@ -35,10 +35,18 @@ class DashboardController extends Controller
             'payments.paymentStatus' => "paid"
         ];
         $groupByFieldsPaidAccounts = ['payments.ghlOpportunityId'];
-        
+
         $totalPaidAccounts = $paymentsModel->getTotalCount($filtersPaidAccounts, $groupByFieldsPaidAccounts, $branchId);
 
         $totalUnpaidAccounts = $totalLeadCount - $totalPaidAccounts;
+
+        // Fetch opportunities with pending amounts
+        $dueAmountAccounts = $paymentsModel->getOpportunitiesWithPendingAmounts($branchId);
+        $totalPaidAccountsWithDueAmount = count($dueAmountAccounts ?? 0);
+        $totalAmountDue = 0;
+        foreach ($dueAmountAccounts as $item) {
+            $totalAmountDue += $item['totalAmountDue'];
+        }
 
         $totalEarnings = 0;
         $resultTotalEarnings = $paymentsModel->getPaidAmountByMonth(null, $branchId);
@@ -58,9 +66,11 @@ class DashboardController extends Controller
             'stats' => [
                 'totalLeadCount' => $totalLeadCount,
                 'totalPaidAccounts' => $totalPaidAccounts,
+                'totalPaidAccountsWithDueAmount' => $totalPaidAccountsWithDueAmount,
                 'totalUnpaidAccounts' => $totalUnpaidAccounts,
                 'totalEarnings' => $totalEarnings,
-                'totalEarningsThisMonth' => $totalEarningsThisMonth
+                'totalEarningsThisMonth' => $totalEarningsThisMonth,
+                'totalAmountDue' => $totalAmountDue
             ],
             'leads' => $leads
         ];
@@ -135,12 +145,11 @@ class DashboardController extends Controller
     {
         $ghlOpportunitiesModel = new GHLOpportunitiesModel();
 
-        $accountType = $this->request->getPost('accountType');
         $server = json_decode($this->request->getPost('server')); // Decode JSON string back to array
         $serverCost = $this->request->getPost('serverCost');
 
         // Validate inputs
-        if (empty($leadId) || empty($accountType)) {
+        if (empty($leadId) || empty($server)) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Invalid data provided.'
@@ -149,7 +158,6 @@ class DashboardController extends Controller
 
         // Prepare the data to update
         $dataToUpdate = [
-            'accountType' => $accountType,
             'server' => json_encode($server), // Store as JSON in the database
             'serverCost' => $serverCost,
             'updatedAt' => date('Y-m-d H:i:s')
@@ -173,7 +181,7 @@ class DashboardController extends Controller
         $accounts = $accountsModel
             ->where('ghlOpportunityId', $leadId)
             ->findAll();
-        
+
         $totalCount = $accountsModel->getTotalCount($filters);
 
         $response = [
@@ -189,26 +197,26 @@ class DashboardController extends Controller
     {
         $accountsModel = new AccountsModel();
 
-        $systemType = $this->request->getPost('systemType');
+        $serverType = $this->request->getPost('serverType');
+        $accountType = $this->request->getPost('accountType');
         $accountNumber = $this->request->getPost('accountNumber');
-        $accountSize = $this->request->getPost('accountSize');
         $accountCost = $this->request->getPost('accountCost');
         $multiplier = $this->request->getPost('multiplier');
 
         // Validate inputs
-        if (empty($leadId) || empty($systemType) || empty($accountNumber) || empty($accountCost) || empty($multiplier)) {
+        if (empty($leadId) || empty($serverType) || empty($accountType) || empty($accountNumber) || empty($accountCost) || empty($multiplier)) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Invalid data provided.'
             ]);
         }
 
-        // Prepare the data to update
+        // Prepare the data to create
         $data = [
             'ghlOpportunityId' => $leadId,
-            'systemType' => $systemType,
+            'serverType' => $serverType,
+            'accountType' => $accountType,
             'accountNumber' => $accountNumber,
-            'accountSize' => $accountSize,
             'accountCost' => $accountCost,
             'multiplier' => $multiplier,
             'createdAt' => date('Y-m-d H:i:s')
@@ -222,13 +230,58 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function fetchPayments($leadId)
+    public function fetchPayments($ghlOpportunityId)
     {
         $paymentsModel = new PaymentsModel();
 
-        $payments = $paymentsModel
-            ->where('ghlOpportunityId', $leadId)
-            ->findAll();
+        // 1. Fetch past payments
+        $pastPayments = $paymentsModel->getPastPayments($ghlOpportunityId);
+
+        // 2. Calculate server cost and account cost for the current month
+        $serverCost = $paymentsModel->getServerCost($ghlOpportunityId);
+        $accountTotal = $paymentsModel->getAccountTotal($ghlOpportunityId);
+        $currentMonthCost = $serverCost + $accountTotal;
+
+        // 3. Get the current month
+        $currentMonth = date('F Y'); // e.g., 'October 2024'
+
+        // 4. Check if there's an existing payment entry for the current month
+        $currentPayment = $paymentsModel->getAllCurrentMonthPayments($ghlOpportunityId, $currentMonth);
+
+        // Initialize paid and remaining amounts based on current payment if it exists
+        $paidAmount = 0;
+        foreach ($currentPayment as $item) {
+            if ($item['paymentStatus'] === "paid") {
+                $paidAmount += $item['amount'];
+            }
+        }
+        $remainingAmount = max(0, $currentMonthCost - $paidAmount);
+
+        // Determine if an additional "unpaid" entry is needed
+        if ($remainingAmount > 0) {
+            // Check if there’s already an unpaid entry for the remaining amount in the current month
+            $unpaidEntry = $paymentsModel->getCurrentMonthPaymentByStatus($ghlOpportunityId, $currentMonth, 'unpaid');
+
+            // Only create a new unpaid entry if it doesn’t already exist
+            if (!$unpaidEntry) {
+                $paymentsModel->recordPayment($ghlOpportunityId, $remainingAmount, 'unpaid', $currentMonth);
+            } else if ($unpaidEntry["amount"] < $remainingAmount) {
+                // Prepare the data to update
+                $dataToUpdate = [
+                    'amount' => $remainingAmount,
+                    'updatedAt' => date('Y-m-d H:i:s')
+                ];
+
+                // Update record by paymentId
+                $paymentsModel->update($unpaidEntry['paymentId'], $dataToUpdate);
+            }
+        }
+
+        // Create an entry to represent the current month's payment for display
+        $allCurrentPayment = $paymentsModel->getAllCurrentMonthPayments($ghlOpportunityId, $currentMonth);
+
+        // 5. Combine past payments and the current month entry into one list
+        $payments = array_merge($pastPayments, $allCurrentPayment);
 
         $response = [
             'success' => true,
@@ -238,33 +291,50 @@ class DashboardController extends Controller
         return $this->response->setJSON($response);
     }
 
-    public function updatePayments($leadId, $paymentId)
+    public function updatePayments($leadId)
     {
         $paymentsModel = new PaymentsModel();
 
+        $paymentId = $this->request->getPost('paymentId');
+        $month = $this->request->getPost('month');
+        $amount = $this->request->getPost('amount');
         $paymentMadeOn = $this->request->getPost('paymentMadeOn');
 
         // Validate inputs
-        if (empty($leadId) || empty($paymentId) || empty($paymentMadeOn)) {
+        if (empty($leadId) || empty($paymentMadeOn) || empty($month) || empty($amount)) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Invalid data provided.'
             ]);
         }
 
-        // Prepare the data to update
-        $dataToUpdate = [
-            'paymentStatus' => 'paid',
-            'paymentMadeOn' => $paymentMadeOn,
-            'updatedAt' => date('Y-m-d H:i:s')
-        ];
+        if (!empty($paymentId) && $paymentId !== "undefined") {
+            // Prepare the data to update
+            $dataToUpdate = [
+                'paymentStatus' => 'paid',
+                'paymentMadeOn' => $paymentMadeOn,
+                'updatedAt' => date('Y-m-d H:i:s')
+            ];
 
-        // Update record by paymentId
-        $paymentsModel->update($paymentId, $dataToUpdate);
+            // Update record by paymentId
+            $paymentsModel->update($paymentId, $dataToUpdate);
+        } else {
+            // Prepare the data to create
+            $data = [
+                'ghlOpportunityId' => $leadId,
+                'month' => $month,
+                'amount' => $amount,
+                'paymentStatus' => 'paid',
+                'paymentMadeOn' => $paymentMadeOn,
+                'createdAt' => date('Y-m-d H:i:s')
+            ];
+
+            $paymentsModel->insert($data);
+        }
 
         return $this->response->setJSON([
             'success' => true,
-            'message' => 'Payment updated successfully.'
+            'message' => "Payment recorded successfully"
         ]);
     }
 }

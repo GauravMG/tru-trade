@@ -6,7 +6,7 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-$routes->post('/lead/(:any)/update-payments/(:any)', 'DashboardController::updatePayments/$1/$2');
+$routes->post('/lead/(:any)/update-payments', 'DashboardController::updatePayments/$1');
 $routes->get('/lead/(:any)/fetch-payments', 'DashboardController::fetchPayments/$1');
 
 $routes->post('/lead/(:any)/create-account', 'DashboardController::createAccount/$1');

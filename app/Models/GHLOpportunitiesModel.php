@@ -32,7 +32,6 @@ class GHLOpportunitiesModel extends Model
         'createdAt',
         'updatedAt',
         'deletedAt',
-        'accountType',
         'server',
         'serverCost'
     ];

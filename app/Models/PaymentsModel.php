@@ -81,7 +81,7 @@ class PaymentsModel extends Model
         // Join with ghl_opportunities table if ghlPipelineId is provided
         if ($ghlPipelineId !== null) {
             $builder->join('ghl_opportunities', 'payments.ghlOpportunityId = ghl_opportunities.ghlOpportunityId')
-                    ->where('ghl_opportunities.ghlPipelineId', $ghlPipelineId);
+                ->where('ghl_opportunities.ghlPipelineId', $ghlPipelineId);
         }
 
         // Apply other optional filters
@@ -118,7 +118,7 @@ class PaymentsModel extends Model
         // Apply ghlPipelineId filter if provided
         if ($ghlPipelineId !== null) {
             $builder->join('ghl_opportunities', 'payments.ghlOpportunityId = ghl_opportunities.ghlOpportunityId')
-                    ->where('ghl_opportunities.ghlPipelineId', $ghlPipelineId);
+                ->where('ghl_opportunities.ghlPipelineId', $ghlPipelineId);
         }
 
         // Sum the 'amount' field and retrieve the result
@@ -128,5 +128,97 @@ class PaymentsModel extends Model
         return ['amount' => $result['amount'] ?? 0];
     }
 
+    public function getPastPayments($ghlOpportunityId)
+    {
+        // Get the current month and year
+        $currentMonth = date('F Y');
 
+        return $this->db->table('payments')
+            ->select('paymentId, month, amount, paymentStatus, paymentMadeOn')
+            ->where('ghlOpportunityId', $ghlOpportunityId)
+            ->where('month <', $currentMonth)
+            ->orderBy('month', 'DESC')
+            ->get()
+            ->getResultArray();
+    }
+
+    public function getServerCost($ghlOpportunityId)
+    {
+        return $this->db->table('ghl_opportunities')
+            ->select('serverCost')
+            ->where('ghlOpportunityId', $ghlOpportunityId)
+            ->get()
+            ->getRow()->serverCost;
+    }
+
+    public function getAccountTotal($ghlOpportunityId)
+    {
+        return $this->db->table('accounts')
+            ->select('SUM(accountCost * multiplier) AS accountTotal')
+            ->where('ghlOpportunityId', $ghlOpportunityId)
+            ->get()
+            ->getRow()
+            ->accountTotal;
+    }
+
+    public function getAllCurrentMonthPayments($ghlOpportunityId, $currentMonth)
+    {
+        return $this->db->table('payments')
+            ->select('paymentId, month, amount, paymentStatus, paymentMadeOn')
+            ->where('ghlOpportunityId', $ghlOpportunityId)
+            ->where('month', $currentMonth)
+            ->get()
+            ->getResultArray();
+    }
+
+    public function getCurrentMonthPayment($ghlOpportunityId, $currentMonth)
+    {
+        return $this->db->table('payments')
+            ->select('paymentId, month, amount, paymentStatus, paymentMadeOn')
+            ->where('ghlOpportunityId', $ghlOpportunityId)
+            ->where('month', $currentMonth)
+            ->get()
+            ->getRowArray();
+    }
+
+    public function getCurrentMonthPaymentByStatus($ghlOpportunityId, $month, $status)
+    {
+        return $this->db->table('payments')
+            ->select('paymentId, amount')
+            ->where('ghlOpportunityId', $ghlOpportunityId)
+            ->where('month', $month)
+            ->where('paymentStatus', $status)
+            ->get()
+            ->getRowArray();
+    }
+
+    public function recordPayment($ghlOpportunityId, $amount, $status, $month)
+    {
+        return $this->db->table('payments')->insert([
+            'ghlOpportunityId' => $ghlOpportunityId,
+            'amount' => $amount,
+            'paymentStatus' => $status,
+            'month' => $month,
+            'paymentMadeOn' => date('Y-m-d H:i:s'),
+            'createdAt' => date('Y-m-d H:i:s'),
+            'updatedAt' => date('Y-m-d H:i:s')
+        ]);
+    }
+
+    public function getOpportunitiesWithPendingAmounts($branchId = null)
+    {
+        $builder = $this->db->table('payments')
+            ->select('ghlOpportunityId, SUM(amount) AS totalAmountDue')
+            ->where('paymentStatus', 'unpaid');
+
+        // Apply branch filter if provided
+        if (!empty($branchId)) {
+            $builder->where('ghlPipelineId', $branchId);
+        }
+
+        // Group by GHL Opportunity ID to calculate total amount due per opportunity
+        return $builder->groupBy('ghlOpportunityId')
+            ->get()
+            ->getResultArray();
+    }
 }

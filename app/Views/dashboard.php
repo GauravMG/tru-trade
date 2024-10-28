@@ -45,6 +45,20 @@ $branchId = $session->get('branchId');
     <!-- ./col -->
     <div class="col-lg-3 col-6">
         <!-- small box -->
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3><?= $stats['totalPaidAccountsWithDueAmount']; ?></h3>
+
+                <p>Accounts with Due Payment</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-stats-bars"></i>
+            </div>
+        </div>
+    </div>
+    <!-- ./col -->
+    <div class="col-lg-3 col-6">
+        <!-- small box -->
         <div class="small-box bg-danger">
             <div class="inner">
                 <h3><?= $stats['totalUnpaidAccounts']; ?></h3>
@@ -78,6 +92,20 @@ $branchId = $session->get('branchId');
                 <h3>$<?= $stats['totalEarningsThisMonth']; ?></h3>
 
                 <p>This Month's Earnings</p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-pie-graph"></i>
+            </div>
+        </div>
+    </div>
+    <!-- ./col -->
+    <div class="col-lg-3 col-6">
+        <!-- small box -->
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>$<?= $stats['totalAmountDue']; ?></h3>
+
+                <p>Due Amount</p>
             </div>
             <div class="icon">
                 <i class="ion ion-pie-graph"></i>

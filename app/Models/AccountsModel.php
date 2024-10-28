@@ -15,7 +15,8 @@ class AccountsModel extends Model
     protected $allowedFields    = [
         'accountId',
         'ghlOpportunityId',
-        'systemType',
+        'serverType',
+        'accountType',
         'accountNumber',
         'accountSize',
         'accountCost',

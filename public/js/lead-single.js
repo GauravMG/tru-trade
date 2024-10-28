@@ -1,5 +1,3 @@
-var accountType = null
-
 $(document).ready(function () {
     fetchLeadDetails("#lead-details")
 
@@ -30,25 +28,8 @@ $(document).ready(function () {
     $("#formLeadDetailsSubmit").on("submit", function (e) {
         e.preventDefault()
 
-        const accountType = document.querySelector('input[name="accountType"]:checked')?.value
-        if ([undefined, null].includes(accountType)) {
-            toastr.error("Please select account type")
-            return
-        }
-
-        let server = []
-        switch (accountType) {
-            case "funded": const selectedServersRadio = document.querySelector('input[name="server"]:checked')?.value
-                if (selectedServersRadio) {
-                    server = [selectedServersRadio]
-                }
-
-                break
-
-            case "brokered":
-                const selectedServers = document.querySelectorAll('input[name="server"]:checked')
-                server = Array.from(selectedServers).map(checkbox => checkbox.value)
-        }
+        const selectedServers = document.querySelectorAll('input[name="server"]:checked')
+        const server = Array.from(selectedServers).map(checkbox => checkbox.value)
         if (!server?.length) {
             toastr.error("Please select servers")
             return
@@ -64,7 +45,6 @@ $(document).ready(function () {
             url: `/lead/${leadId}/update-details`,
             method: 'POST',
             data: {
-                accountType: accountType,
                 server: JSON.stringify(server), // Convert array to JSON string
                 serverCost: serverCost
             },
@@ -90,59 +70,6 @@ $(document).ready(function () {
     })
 })
 
-function onChangeAccountType(value, selectedServers = []) {
-    let serverDiv = document.getElementById("server-div")
-
-    switch (value) {
-        case "funded":
-            serverDiv.innerHTML = `
-                <label>Server</label>
-                <span style="font-size: 13px;"> (please select 1)</span>
-                <div class="form-check">
-                    <label class="form-check-label"><input class="form-check-input" type="radio" name="server" id="serverA" value="a"> A</label>
-                </div>
-                <div class="form-check">
-                    <label class="form-check-label"><input class="form-check-input" type="radio" name="server" id="serverB" value="b"> B</label>
-                </div>
-            `
-
-            if (selectedServers?.length) {
-                if (selectedServers[0] === 'a') {
-                    document.getElementById('serverA').checked = true
-                } else if (selectedServers[0] === 'b') {
-                    document.getElementById('serverB').checked = true
-                }
-            }
-
-            document.getElementById("newServerAccountSizeContainer").style.display = "block"
-
-            break
-
-        case "brokered":
-            serverDiv.innerHTML = `
-                <label>Server</label>
-                <div class="form-check">
-                    <label class="form-check-label"><input class="form-check-input" type="checkbox" name="server" id="serverA" value="a"> A</label>
-                </div>
-                <div class="form-check">
-                    <label class="form-check-label"><input class="form-check-input" type="checkbox" name="server" id="serverB" value="b"> B</label>
-                </div>
-            `
-
-            if (selectedServers?.length) {
-                document.querySelectorAll('input[name="server"]').forEach((checkbox) => {
-                    if (selectedServers.includes(checkbox.value)) {
-                        checkbox.checked = true
-                    }
-                })
-            }
-
-            document.getElementById("newServerAccountSizeContainer").style.display = "none"
-
-            break
-    }
-}
-
 function fetchLeadDetails(targetTabId) {
     $.ajax({
         url: `/lead/${leadId}/fetch-details`,
@@ -165,20 +92,45 @@ function fetchLeadDetails(targetTabId) {
             $("#status").val(capitalizeFirstLetter(leadDetails.status ?? ""))
             $("#source").val(leadDetails.source ?? "")
 
-            accountType = leadDetails.accountType ?? null
-            if (accountType) {
-                if (accountType === 'funded') {
-                    document.getElementById('accountTypeFunded').checked = true
-                } else if (accountType === 'brokered') {
-                    document.getElementById('accountTypeBrokered').checked = true
-                }
+            let selectedServers = leadDetails.server ?? []
+            if (selectedServers?.length) {
+                selectedServers = typeof selectedServers === "string" ? JSON.parse(selectedServers) : selectedServers
 
-                let selectedServers = leadDetails.server ?? []
-                if (selectedServers?.length) {
-                    selectedServers = typeof selectedServers === "string" ? JSON.parse(selectedServers) : selectedServers
-                }
+                let accountServerDiv = document.getElementById("account-server-div")
 
-                onChangeAccountType(accountType, selectedServers)
+                if (selectedServers.length === 1 && selectedServers[0] === "a") {
+                    accountServerDiv.innerHTML = `
+                    <label>Server <span class="text-danger">*</span></label>
+                    <div class="form-check">
+                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountServerType" id="newAccountServerTypeA" value="a"> A</label>
+                    </div>
+                    `
+                } else if (selectedServers.length === 1 && selectedServers[0] === "b") {
+                    accountServerDiv.innerHTML = `
+                    <label>Server <span class="text-danger">*</span></label>
+                    <div class="form-check">
+                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountServerType" id="newAccountServerTypeB" value="b"> B</label>
+                    </div>
+                    `
+                } else if (selectedServers.length === 2) {
+                    accountServerDiv.innerHTML = `
+                    <label>Server <span class="text-danger">*</span></label><span style="font-size: 13px;"> (please select 1)</span>
+                    <div class="form-check">
+                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountServerType" id="newAccountServerTypeA" value="a"> A</label>
+                    </div>
+                    <div class="form-check">
+                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountServerType" id="newAccountServerTypeB" value="b"> B</label>
+                    </div>
+                    `
+                }
+            }
+
+            if (selectedServers?.length) {
+                document.querySelectorAll('input[name="server"]').forEach((checkbox) => {
+                    if (selectedServers.includes(checkbox.value)) {
+                        checkbox.checked = true
+                    }
+                })
             }
 
             $("#serverCost").val(leadDetails.serverCost ?? null)
@@ -235,12 +187,6 @@ function fetchAccounts(targetTabId) {
                 return
             }
 
-            if ((accountType ?? "").trim() === "" || (accountType === "funded" && response.total >= 20) || (accountType === "brokered" && response.total >= 8)) {
-                document.getElementById("addAccountButtonSource").style.display = "none"
-            } else {
-                document.getElementById("addAccountButtonSource").style.display = "block"
-            }
-
             let accountList = document.getElementById("account-list");
 
             accountList.innerHTML = "";
@@ -248,10 +194,10 @@ function fetchAccounts(targetTabId) {
             for (let server of response.data) {
                 accountList.innerHTML += `
                     <tr>
-                        <td>${server.systemType}</td>
+                        <td>${(server.serverType ?? "").toUpperCase()}</td>
+                        <td>${(server.accountType ?? "").toUpperCase()}</td>
                         <td>${server.accountNumber}</td>
-                        <td>${addKInAmount(server.accountSize)}</td>
-                        <td>$ ${server.accountCost}</td>
+                        <td>$${server.accountCost}</td>
                         <td>${server.multiplier}x</td>
                         <td>${formatDate(server.createdAt)}</td>
                     </tr>
@@ -269,9 +215,15 @@ function fetchAccounts(targetTabId) {
 }
 
 function saveAccount() {
-    const systemType = document.getElementById("newAccountSystemType").value
-    if ((systemType ?? "").trim() === "") {
-        toastr.error("Please enter system type")
+    const serverType = document.querySelector('input[name="newAccountServerType"]:checked')?.value
+    if ((serverType ?? "").trim() === "") {
+        toastr.error("Please enter server type")
+        return
+    }
+
+    const accountType = document.querySelector('input[name="newAccountType"]:checked')?.value
+    if ((accountType ?? "").trim() === "") {
+        toastr.error("Please enter account type")
         return
     }
 
@@ -279,16 +231,6 @@ function saveAccount() {
     if ((accountNumber ?? "").trim() === "") {
         toastr.error("Please enter account number")
         return
-    }
-
-    let accountSize = null
-    const accountType = document.querySelector('input[name="accountType"]:checked')?.value
-    if (accountType === "funded") {
-        accountSize = document.getElementById("newAccountSize").value
-        if ((accountSize ?? "").trim() === "") {
-            toastr.error("Please enter account size")
-            return
-        }
     }
 
     const accountCost = document.getElementById("newAccountCost").value
@@ -307,9 +249,9 @@ function saveAccount() {
         url: `/lead/${leadId}/create-account`,
         method: 'POST',
         data: {
-            systemType,
+            serverType,
+            accountType,
             accountNumber,
-            accountSize,
             accountCost,
             multiplier
         },
@@ -378,7 +320,7 @@ function fetchPayments(targetTabId) {
                         <td>${payment.month}</td>
                         <td>$ ${payment.amount}</td>
                         <td>${capitalizeFirstLetter(payment.paymentStatus ?? "")}</td>
-                        <td>${(payment.paymentStatus ?? "") === "paid" ? `<span><i class="fa fa-check"></i> ${formatDateWithoutTime(payment.paymentMadeOn)}</span>` : `<button class="btn btn-primary" onclick="markPaymentAsPaid(${payment.paymentId})">Pay</button>`}</td>
+                        <td>${(payment.paymentStatus ?? "") === "paid" ? `<span><i class="fa fa-check"></i> ${formatDateWithoutTime(payment.paymentMadeOn)}</span>` : `<button class="btn btn-primary" onclick="markPaymentAsPaid('${payment.paymentId}', '${payment.month}', '${payment.amount}')">Pay</button>`}</td>
                     </tr>
                 `
             }
@@ -393,17 +335,21 @@ function fetchPayments(targetTabId) {
     })
 }
 
-function markPaymentAsPaid(paymentId) {
+function markPaymentAsPaid(paymentId, month, amount) {
     $("#paymentDetailsPaymentId").val(paymentId)
+    $("#paymentDetailsMonth").val(month)
+    $("#paymentDetailsAmount").val(amount)
     $('#modal-payment-pay').modal('show')
 }
 
 function savePaymentDetails() {
     const paymentId = document.getElementById("paymentDetailsPaymentId").value
-    if ((paymentId ?? "").trim() === "") {
-        toastr.error("Invalid payment details")
-        return
-    }
+    const month = document.getElementById("paymentDetailsMonth").value
+    const amount = document.getElementById("paymentDetailsAmount").value
+    // if ((paymentId ?? "").trim() === "") {
+    //     toastr.error("Invalid payment details")
+    //     return
+    // }
 
     const paymentMadeOn = document.getElementById("paymentDetailsPaymentModeOn").value
     if ((paymentMadeOn ?? "").trim() === "") {
@@ -412,9 +358,12 @@ function savePaymentDetails() {
     }
 
     $.ajax({
-        url: `/lead/${leadId}/update-payments/${paymentId}`,
+        url: `/lead/${leadId}/update-payments`,
         method: 'POST',
         data: {
+            paymentId,
+            month,
+            amount,
             paymentMadeOn
         },
         beforeSend: function () {

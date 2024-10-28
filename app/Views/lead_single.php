@@ -57,24 +57,21 @@
                                                         </div>
                                                     </div>
                                                     <div class="row">
-                                                        <div class="form-group col-md-6">
-                                                            <label>Account Type <span class="text-danger">*</span></label>
-                                                            <div class="form-check">
-                                                                <label class="form-check-label"><input class="form-check-input" type="radio" name="accountType" id="accountTypeFunded" value="funded"> Funded</label>
-                                                            </div>
-                                                            <div class="form-check">
-                                                                <label class="form-check-label"><input class="form-check-input" type="radio" name="accountType" id="accountTypeBrokered" value="brokered"> Brokered</label>
-                                                            </div>
-                                                        </div>
                                                         <div class="form-group col-md-6" id="server-div">
                                                             <label>Server <span class="text-danger">*</span></label>
-                                                            <br>
-                                                            <span style="font-size: 13px;"> (Please select account type first)</span>
+                                                            <div class="row col-md-12">
+                                                                <div class="form-check col-md-6">
+                                                                    <label class="form-check-label"><input class="form-check-input" type="checkbox" name="server" id="serverA" value="a"> A</label>
+                                                                </div>
+                                                                <div class="form-check col-md-6">
+                                                                    <label class="form-check-label"><input class="form-check-input" type="checkbox" name="server" id="serverB" value="b"> B</label>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="serverCost">Server Cost <span class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" id="serverCost" placeholder="Enter server cost">
+                                                        <div class="form-group col-md-6">
+                                                            <label for="serverCost">Server Cost <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="serverCost" placeholder="Enter server cost">
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <!-- /.card-body -->
@@ -150,9 +147,9 @@
                                         <table id="dtAccountList" class="table table-bordered table-hover">
                                             <thead>
                                                 <tr>
-                                                    <th>System Type</th>
+                                                    <th>Server Type</th>
+                                                    <th>Account Type</th>
                                                     <th>Account Number</th>
-                                                    <th>Account Size</th>
                                                     <th>Account Cost</th>
                                                     <th>Multiplier</th>
                                                     <th>Created On</th>
@@ -161,9 +158,9 @@
                                             <tbody id="account-list"></tbody>
                                             <tfoot>
                                                 <tr>
-                                                    <th>System Type</th>
+                                                    <th>Server Type</th>
+                                                    <th>Account Type</th>
                                                     <th>Account Number</th>
-                                                    <th>Account Size</th>
                                                     <th>Account Cost</th>
                                                     <th>Multiplier</th>
                                                     <th>Created On</th>
@@ -190,25 +187,39 @@
                                 <div class="modal-body">
                                     <form id="formNewAccount">
                                         <div class="card-body">
-                                            <div class="form-group">
-                                                <label for="newAccountSystemType">System Type <span class="text-danger">*</span></label>
-                                                <input type="text" class="form-control" id="newAccountSystemType" placeholder="Enter system type">
+                                            <div class="row">
+                                                <div class="form-group col-md-6" id="account-server-div">
+                                                    <label>Server <span class="text-danger">*</span></label><span style="font-size: 13px;"> (please select 1)</span>
+                                                    <div class="form-check">
+                                                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountServerType" id="newAccountServerTypeA" value="a"> A</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountServerType" id="newAccountServerTypeB" value="b"> B</label>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label>Account Type <span class="text-danger">*</span></label>
+                                                    <div class="form-check">
+                                                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountType" id="newAccountTypeFunded" value="funded"> Funded</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountType" id="newAccountTypeBrokered" value="brokered"> Brokered</label>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div class="form-group">
                                                 <label for="newAccountNumber">Account Number <span class="text-danger">*</span></label>
                                                 <input type="number" class="form-control" id="newAccountNumber" placeholder="Enter account number">
                                             </div>
-                                            <div class="form-group" id="newServerAccountSizeContainer">
-                                                <label for="newAccountSize">Account Size <span class="text-danger">*</span></label>
-                                                <input type="number" class="form-control" id="newAccountSize" placeholder="Enter account size between 50000 to 300000" min="50" max="300">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="newAccountCost">Account Cost <span class="text-danger">*</span></label>
-                                                <input type="number" class="form-control" id="newAccountCost" placeholder="Enter account cost">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="newAccountMultiplier">Multiplier <span class="text-danger">*</span></label>
-                                                <input type="number" class="form-control" id="newAccountMultiplier" placeholder="Enter multiplier between 1 to 20" min="1" max="20">
+                                            <div class="row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="newAccountCost">Account Cost <span class="text-danger">*</span></label>
+                                                    <input type="number" class="form-control" id="newAccountCost" placeholder="Enter account cost">
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="newAccountMultiplier">Multiplier <span class="text-danger">*</span></label>
+                                                    <input type="number" class="form-control" id="newAccountMultiplier" placeholder="Enter multiplier between 1 to 20" min="1" max="20">
+                                                </div>
                                             </div>
                                         </div>
                                         <!-- /.card-body -->
@@ -279,6 +290,8 @@
                                         <div class="card-body">
                                             <div class="form-group">
                                                 <input type="hidden" class="form-control" id="paymentDetailsPaymentId">
+                                                <input type="hidden" class="form-control" id="paymentDetailsMonth">
+                                                <input type="hidden" class="form-control" id="paymentDetailsAmount">
                                             </div>
                                             <div class="form-group">
                                                 <label for="paymentDetailsPaymentModeOn">Payment Made On <span class="text-danger">*</span></label>
