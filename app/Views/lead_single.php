@@ -5,6 +5,21 @@
 <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/datatables-responsive/css/responsive.bootstrap4.min.css'); ?>">
 <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/datatables-buttons/css/buttons.bootstrap4.min.css'); ?>">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+<style>
+        #viewerContract {
+            width: 100%;
+            height: calc(100vh - 100px); /* Adjust height according to viewport, leaving space for the header */
+            border: 1px solid #ccc;
+            overflow: auto;
+            display: none; /* Initially hidden */
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%; /* Make iframe take full height */
+            border: none; /* Remove border from iframe */
+        }
+    </style>
 <?= $this->endSection(); ?>
 
 <?= $this->section('content'); ?>
@@ -21,6 +36,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" id="manage-payments-tab" data-toggle="pill" href="#manage-payments" role="tab" aria-controls="manage-payments" aria-selected="false">Manage Payments</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="manage-contracts-tab" data-toggle="pill" href="#manage-contracts" role="tab" aria-controls="manage-contracts" aria-selected="false">Contract Details</a>
                     </li>
                 </ul>
             </div>
@@ -311,6 +329,38 @@
                         <!-- /.modal-dialog -->
                     </div>
                     <!-- end tab - manage payments -->
+
+                    <!-- start tab - contract details -->
+                    <div class="tab-pane fade" id="manage-contracts" role="tabpanel" aria-labelledby="manage-contracts-tab">
+                        <div class="overlay-wrapper">
+                            <div id="manage-contracts-loader" class="overlay"><i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                <div class="text-bold pt-2">Loading...</div>
+                            </div>
+                            <div id="manage-contracts-content">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="form-group col-md-8" id="uploadContractContainer">
+                                            <label for="contract">Upload Contract</label>
+                                            <div class="input-group">
+                                                <div class="custom-file">
+                                                    <input type="file" class="custom-file-input" id="contract" accept=".pdf,image/*">
+                                                    <label class="custom-file-label" for="contract">Choose file</label>
+                                                </div>
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text" style="cursor: pointer;" onclick="uploadContract()">Upload</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="viewerContract"></div>
+                                    </div>
+                                    <!-- /.card-body -->
+                                </div>
+                                <!-- /.card -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end tab - contract details -->
                 </div>
             </div>
             <!-- /.card -->
@@ -329,9 +379,14 @@
 <script src="<?= base_url('assets/adminlte/plugins/datatables-buttons/js/buttons.html5.min.js'); ?>"></script>
 <script src="<?= base_url('assets/adminlte/plugins/datatables-buttons/js/buttons.print.min.js'); ?>"></script>
 <script src="<?= base_url('assets/adminlte/plugins/datatables-buttons/js/buttons.colVis.min.js'); ?>"></script>
+<script src="<?= base_url('assets/adminlte/plugins/bs-custom-file-input/bs-custom-file-input.min.js'); ?>"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.23.1/docxtemplater.min.js"></script>
 <script>
     const leadId = <?= $opportunity["ghlOpportunityId"]; ?>;
+    const baseUrl = '<?= base_url(); ?>';
 </script>
 <script src="<?= base_url('js/common.js') . '?t=' . time(); ?>"></script>
 <script src="<?= base_url('js/lead-single.js') . '?t=' . time(); ?>"></script>

@@ -16,14 +16,20 @@ $branchId = $session->get('branchId');
 
 <?= $this->section('headerButtons'); ?>
 <?php if ($session->get("role") === "Owner") { ?>
-<div class="col-md-5 offset-md-7">
-    <select class="form-control" id="branchId" name="branchId" onchange="changeBranch(this.value)">
-        <option value="-">-- Select Branch --</option>
-        <option value="1" <?php if ($branchId == 1) { echo 'selected'; } ?>>TruTrade Pipeline</option>
-        <option value="2" <?php if ($branchId == 2) { echo 'selected'; } ?>>Danny's Sales Pipeline</option>
-        <option value="3" <?php if ($branchId == 3) { echo 'selected'; } ?>>Brian's Sales Pipeline</option>
-    </select>
-</div>
+    <div class="col-md-5 offset-md-7">
+        <select class="form-control" id="branchId" name="branchId" onchange="changeBranch(this.value)">
+            <option value="-">-- Select Branch --</option>
+            <option value="1" <?php if ($branchId == 1) {
+                                    echo 'selected';
+                                } ?>>TruTrade Pipeline</option>
+            <option value="2" <?php if ($branchId == 2) {
+                                    echo 'selected';
+                                } ?>>Danny's Sales Pipeline</option>
+            <option value="3" <?php if ($branchId == 3) {
+                                    echo 'selected';
+                                } ?>>Brian's Sales Pipeline</option>
+        </select>
+    </div>
 <?php } ?>
 <?= $this->endSection(); ?>
 
@@ -50,17 +56,22 @@ $branchId = $session->get('branchId');
                     </thead>
                     <tbody>
                         <?php foreach ($data['leads'] as $lead) { ?>
-                        <tr>
-                            <td><?= $lead['name']; ?></td>
-                            <td><?= $lead['pipeline']['pipelineName']; ?></td>
-                            <td><?= $lead['status']; ?></td>
-                            <td>$<?= $lead['totalPaidAmount'] ?? 0; ?></td>
-                            <td>$<?= $lead['totalDueAmount'] ?? 0; ?></td>
-                            <td><?= date("d M, Y h:i A", strtotime($lead['createdAt'])); ?></td>
-                            <td>
-                                <span onclick="onClickViewLead(<?= $lead['ghlOpportunityId']; ?>)"><i class="fa fa-eye view-icon"></i></span>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td><?= $lead['name']; ?></td>
+                                <td><?= $lead['pipeline']['pipelineName']; ?></td>
+                                <td><?= $lead['status']; ?></td>
+                                <td>$<?= $lead['totalPaidAmount'] ?? 0; ?></td>
+                                <td>$<?= $lead['totalDueAmount'] ?? 0; ?></td>
+                                <td><?= date("d M, Y h:i A", strtotime($lead['createdAt'])); ?></td>
+                                <td>
+                                    <div style="display: flex; justify-content: space-around;">
+                                        <span onclick="onClickViewLead(<?= $lead['ghlOpportunityId']; ?>)"><i class="fa fa-eye view-icon"></i></span>
+                                        <?php if (!empty($lead['contractLink'])) { ?>
+                                            <span onclick="onClickDownloadFile('<?= $lead['contractLink']; ?>')"><i class="fa fa-download view-icon"></i></span>
+                                        <?php } ?>
+                                    </div>
+                                </td>
+                            </tr>
                         <?php } ?>
                     </tbody>
                     <tfoot>

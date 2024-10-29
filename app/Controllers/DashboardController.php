@@ -206,6 +206,45 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function updateContract($leadId)
+    {
+        $contract = $this->request->getFile('contract');
+
+        if (!$contract || !$contract->isValid()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Invalid file or no file uploaded.'
+            ]);
+        }
+
+        try {
+            // Generate a unique name for the file and move it to the writable/uploads folder
+            $newName = $contract->getRandomName();
+            $contract->move(ROOTPATH . 'public/uploads', $newName);
+
+            $ghlOpportunitiesModel = new GHLOpportunitiesModel();
+
+            // Prepare the data to update
+            $dataToUpdate = [
+                'contractLink' => base_url("uploads/{$newName}"),
+                'updatedAt' => date('Y-m-d H:i:s')
+            ];
+
+            // Update record by ghlOpportunityId
+            $ghlOpportunitiesModel->update($leadId, $dataToUpdate);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Contract uploaded successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Contract upload failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function fetchAccounts($leadId)
     {
         $accountsModel = new AccountsModel();

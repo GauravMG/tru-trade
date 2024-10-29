@@ -59,3 +59,23 @@ function changeBranch(value) {
         }
     })
 }
+
+function onClickDownloadFile(fileUrl) {
+    // Extract the file name from the URL
+    const fileName = fileUrl.split('/').pop();
+
+    // Create an invisible anchor element to initiate download
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName; // This sets the filename dynamically
+    link.style.display = 'none';
+
+    // Append to the body
+    document.body.appendChild(link);
+
+    // Simulate click to trigger download
+    link.click();
+
+    // Remove the link after triggering download
+    document.body.removeChild(link);
+}

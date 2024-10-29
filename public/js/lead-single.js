@@ -15,6 +15,8 @@ $(document).ready(function () {
             fetchAccounts(targetTabId)
         } else if (targetTabId.replace("#", "") === "manage-payments") {
             fetchPayments(targetTabId)
+        } else if (targetTabId.replace("#", "") === "manage-contracts") {
+            fetchContract(targetTabId)
         }
     })
 
@@ -68,6 +70,11 @@ $(document).ready(function () {
             }
         })
     })
+
+    $('#contract').on('change', function () {
+        const fileName = $(this).val().split('\\').pop(); // Get the file name
+        $(this).next('.custom-file-label').html(fileName); // Set the file name in the label
+    });
 })
 
 function fetchLeadDetails(targetTabId) {
@@ -378,6 +385,134 @@ function savePaymentDetails() {
                 toastr.success(response.message)
                 $('#modal-payment-pay').modal('hide')
                 document.getElementById('formPaymentDetails').reset()
+            } else {
+                toastr.error(response.message)
+            }
+        },
+        error: function (xhr, status, error) {
+            console.log('Error:', error)
+            toastr.error("An error occurred.")
+        }
+    })
+}
+
+function displayFile(filePath) {
+    const extension = filePath.split('.').pop().toLowerCase();
+
+    if (extension === 'pdf') {
+        // Display PDF
+        $('#viewerContract').show().html('<iframe src="' + filePath + '" width="100%" height="100%"></iframe>');
+    } else if (extension === 'docx') {
+        // Display DOCX
+        loadDocx(filePath);
+    } else if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) {
+        // Display Image
+        $('#viewerContract').show().html('<img src="' + filePath + '" width="100%" height="100%" />');
+    } else {
+        alert('Unsupported file type.');
+    }
+}
+
+function loadDocx(filePath) {
+    // Fetch the DOCX file and convert it to HTML
+    fetch(filePath)
+        .then(response => response.blob())
+        .then(blob => {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const zip = new JSZip();
+                zip.loadAsync(event.target.result).then(function (content) {
+                    // Extract text from DOCX file
+                    const docText = content.files['word/document.xml'].async('text');
+                    docText.then(function (text) {
+                        $('#viewerContract').show().html('<div>' + text + '</div>'); // Display the text
+                    });
+                });
+            };
+            reader.readAsArrayBuffer(blob);
+        })
+        .catch(err => {
+            alert('Error loading DOCX file.');
+        });
+}
+
+function fetchContract(targetTabId) {
+    $.ajax({
+        url: `/lead/${leadId}/fetch-details`,
+        method: "GET",
+        data: {},
+        beforeSend: function () { },
+        complete: function () {
+            $(targetTabId + '-loader').fadeOut()
+        },
+        success: function (response) {
+            if (!response.success) {
+                toastr.error(response.message)
+                return
+            }
+
+            if ((response.data.leadDetails?.contractLink ?? "").trim() === "") {
+                document.getElementById("uploadContractContainer").style.display = "block"
+                document.getElementById("viewerContract").style.display = "none"
+                document.getElementById("viewerContract").innerHTML = ""
+
+                return false
+            }
+
+            document.getElementById("uploadContractContainer").style.display = "none"
+
+            displayFile(response.data.leadDetails.contractLink)
+        },
+        error: function (error) {
+            console.log(`error`, error)
+            toastr.error("An error occurred.")
+        },
+    })
+}
+
+function uploadContract() {
+    const fileInput = document.getElementById('contract')
+
+    if (fileInput.files.length === 0) {
+        toastr.error("Please select a file")
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const allowedTypes = [
+        'application/pdf',
+        // 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png',
+        'image/gif'
+    ];
+
+    // Validate file type
+    if (!allowedTypes.includes(file.type)) {
+        alert('Invalid file type. Please upload a PDF, or image file (JPEG, PNG, GIF).');
+        return;
+    }
+
+    let formData = new FormData()
+
+    formData.append('contract', fileInput.files[0])
+
+    $.ajax({
+        url: `/lead/${leadId}/update-contract`,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        beforeSend: function () {
+            $('#manage-contracts-loader').fadeIn()
+        },
+        complete: function () {
+            $('#manage-contracts-loader').fadeOut()
+            fetchContract("#manage-contracts")
+        },
+        success: function (response) {
+            if (response.success) {
+                toastr.success(response.message)
             } else {
                 toastr.error(response.message)
             }

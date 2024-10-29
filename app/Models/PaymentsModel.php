@@ -208,16 +208,17 @@ class PaymentsModel extends Model
     public function getOpportunitiesWithPendingAmounts($branchId = null)
     {
         $builder = $this->db->table('payments')
-            ->select('ghlOpportunityId, SUM(amount) AS totalAmountDue')
-            ->where('paymentStatus', 'unpaid');
+            ->select('payments.ghlOpportunityId, SUM(payments.amount) AS totalAmountDue')
+            ->where('payments.paymentStatus', 'unpaid');
 
         // Apply branch filter if provided
         if (!empty($branchId)) {
-            $builder->where('ghlPipelineId', $branchId);
+            $builder->join('ghl_opportunities', 'payments.ghlOpportunityId = ghl_opportunities.ghlOpportunityId')
+                ->where('ghl_opportunities.ghlPipelineId', $branchId);
         }
 
         // Group by GHL Opportunity ID to calculate total amount due per opportunity
-        return $builder->groupBy('ghlOpportunityId')
+        return $builder->groupBy('payments.ghlOpportunityId')
             ->get()
             ->getResultArray();
     }
@@ -230,18 +231,19 @@ class PaymentsModel extends Model
 
         // Initialize the query
         $builder = $this->select("
-            DATE_FORMAT(paymentMadeOn, '%Y-%m') AS monthYear, 
-            COALESCE(SUM(amount), 0) AS totalPaidAmount
+            DATE_FORMAT(payments.paymentMadeOn, '%Y-%m') AS monthYear, 
+            COALESCE(SUM(payments.amount), 0) AS totalPaidAmount
         ")
-            ->where('paymentStatus', 'paid')
-            ->where('paymentMadeOn >=', $startDate)
-            ->where('paymentMadeOn <=', $endDate)
-            ->groupBy('monthYear') // Group by month and year
-            ->orderBy('paymentMadeOn', 'ASC'); // Sort by ascending month and year
+            ->where('payments.paymentStatus', 'paid')
+            ->where('payments.paymentMadeOn >=', $startDate)
+            ->where('payments.paymentMadeOn <=', $endDate)
+            ->groupBy('payments.month') // Group by month and year
+            ->orderBy('payments.paymentMadeOn', 'ASC'); // Sort by ascending month and year
 
         // Optional filter by branchId if provided
         if ($branchId) {
-            $builder->where('ghlOpportunityId IN (SELECT ghlOpportunityId FROM ghl_opportunities WHERE ghlPipelineId = ?)', [$branchId]);
+            $builder->join('ghl_opportunities', 'payments.ghlOpportunityId = ghl_opportunities.ghlOpportunityId')
+                ->where('ghl_opportunities.ghlPipelineId', $branchId);
         }
 
         // Execute the query and fetch results

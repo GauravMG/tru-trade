@@ -33,7 +33,8 @@ class GHLOpportunitiesModel extends Model
         'updatedAt',
         'deletedAt',
         'server',
-        'serverCost'
+        'serverCost',
+        'contractLink'
     ];
 
     protected bool $allowEmptyInserts = false;
