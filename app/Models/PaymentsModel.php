@@ -154,7 +154,7 @@ class PaymentsModel extends Model
     public function getAccountTotal($ghlOpportunityId)
     {
         return $this->db->table('accounts')
-            ->select('SUM(accountCost * multiplier) AS accountTotal')
+            ->select('SUM(accountCost + COALESCE(quickfundCost, 0)) AS accountTotal')
             ->where('ghlOpportunityId', $ghlOpportunityId)
             ->get()
             ->getRow()

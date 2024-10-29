@@ -75,6 +75,22 @@ $(document).ready(function () {
         const fileName = $(this).val().split('\\').pop(); // Get the file name
         $(this).next('.custom-file-label').html(fileName); // Set the file name in the label
     });
+
+    // Monitor changes to the Quickfund Account radio buttons
+    $('input[name="newAccountIsQuickfundAccount"]').on('change', function () {
+        const isQuickfundAccount = $(this).val() === 'yes';
+
+        // Toggle visibility of Quickfund Cost field based on selection
+        $('#newAccountQuickfundCostContainer').toggle(isQuickfundAccount);
+
+        // If "Yes" is selected, make Quickfund Cost mandatory
+        if (isQuickfundAccount) {
+            $('#newAccountQuickfundCost').attr('required', true);
+        } else {
+            // If "No" is selected, hide field, clear value, and remove mandatory attribute
+            $('#newAccountQuickfundCost').val('').removeAttr('required');
+        }
+    });
 })
 
 function fetchLeadDetails(targetTabId) {
@@ -206,6 +222,8 @@ function fetchAccounts(targetTabId) {
                         <td>${server.accountNumber}</td>
                         <td>$${server.accountCost}</td>
                         <td>${server.multiplier}x</td>
+                        <td>${(server.isQuickfundAccount ?? "").toUpperCase()}</td>
+                        <td>${server.quickfundCost ? `$${server.quickfundCost}` : ""}</td>
                         <td>${formatDate(server.createdAt)}</td>
                     </tr>
                 `
@@ -224,13 +242,13 @@ function fetchAccounts(targetTabId) {
 function saveAccount() {
     const serverType = document.querySelector('input[name="newAccountServerType"]:checked')?.value
     if ((serverType ?? "").trim() === "") {
-        toastr.error("Please enter server type")
+        toastr.error("Please select server type")
         return
     }
 
     const accountType = document.querySelector('input[name="newAccountType"]:checked')?.value
     if ((accountType ?? "").trim() === "") {
-        toastr.error("Please enter account type")
+        toastr.error("Please select account type")
         return
     }
 
@@ -252,6 +270,21 @@ function saveAccount() {
         return
     }
 
+    const isQuickfundAccount = document.querySelector('input[name="newAccountIsQuickfundAccount"]:checked')?.value
+    if ((isQuickfundAccount ?? "").trim() === "") {
+        toastr.error("Please select if account is quickfund or not")
+        return
+    }
+
+    let quickfundCost = null
+    if (isQuickfundAccount === "yes") {
+        quickfundCost = document.getElementById("newAccountQuickfundCost").value
+        if ((quickfundCost ?? "").trim() === "") {
+            toastr.error("Please enter quickfund cost")
+            return
+        }
+    }
+
     $.ajax({
         url: `/lead/${leadId}/create-account`,
         method: 'POST',
@@ -260,7 +293,9 @@ function saveAccount() {
             accountType,
             accountNumber,
             accountCost,
-            multiplier
+            multiplier,
+            isQuickfundAccount,
+            quickfundCost
         },
         beforeSend: function () {
             $('#manage-accounts-loader').fadeIn()

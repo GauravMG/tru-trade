@@ -170,6 +170,8 @@
                                                     <th>Account Number</th>
                                                     <th>Account Cost</th>
                                                     <th>Multiplier</th>
+                                                    <th>Is Quickfund Account?</th>
+                                                    <th>Quickfund Cost</th>
                                                     <th>Created On</th>
                                                 </tr>
                                             </thead>
@@ -181,6 +183,8 @@
                                                     <th>Account Number</th>
                                                     <th>Account Cost</th>
                                                     <th>Multiplier</th>
+                                                    <th>Is Quickfund Account?</th>
+                                                    <th>Quickfund Cost</th>
                                                     <th>Created On</th>
                                                 </tr>
                                             </tfoot>
@@ -237,6 +241,21 @@
                                                 <div class="form-group col-md-6">
                                                     <label for="newAccountMultiplier">Multiplier <span class="text-danger">*</span></label>
                                                     <input type="number" class="form-control" id="newAccountMultiplier" placeholder="Enter multiplier between 1 to 20" min="1" max="20">
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="form-group col-md-6">
+                                                    <label>Is Quickfund Account? <span class="text-danger">*</span></label>
+                                                    <div class="form-check">
+                                                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountIsQuickfundAccount" id="newAccountIsQuickfundAccountYes" value="yes"> Yes</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <label class="form-check-label"><input class="form-check-input" type="radio" name="newAccountIsQuickfundAccount" id="newAccountIsQuickfundAccountNo" value="no"> No</label>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group col-md-6" id="newAccountQuickfundCostContainer" style="display: none;">
+                                                    <label for="newAccountQuickfundCost">Quickfund Cost <span class="text-danger">*</span></label>
+                                                    <input type="number" class="form-control" id="newAccountQuickfundCost" placeholder="Enter quickfund cost">
                                                 </div>
                                             </div>
                                         </div>

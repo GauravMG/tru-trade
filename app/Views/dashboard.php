@@ -185,6 +185,49 @@ $branchId = $session->get('branchId');
         <!-- /.card -->
     </div>
 </div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Quickfund Accounts</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <!-- small box -->
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3><?= $data['stats']['totalQuickfundAccounts']; ?></h3>
+
+                                <p>Total Quickfund Accounts</p>
+                            </div>
+                            <div class="icon">
+                                <i class="ion ion-stats-bars"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ./col -->
+                    <div class="col-md-3">
+                        <!-- small box -->
+                        <div class="small-box bg-success">
+                            <div class="inner">
+                                <h3>$<?= $data['stats']['totalQuickfundCost']; ?></h3>
+
+                                <p>Total Quickfund Cost</p>
+                            </div>
+                            <div class="icon">
+                                <i class="ion ion-stats-bars"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ./col -->
+                </div>
+            </div>
+        </div>
+        <!-- /.card -->
+    </div>
+</div>
 <?= $this->endSection(); ?>
 
 <?= $this->section('pageScripts'); ?>

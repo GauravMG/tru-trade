@@ -19,6 +19,7 @@ class DashboardController extends Controller
 
         $ghlOpportunitiesModel = new GHLOpportunitiesModel();
         $paymentsModel = new PaymentsModel();
+        $accountsModel = new AccountsModel();
 
         $filters['ghl_opportunities.status'] = ["open", "won"];
 
@@ -60,6 +61,9 @@ class DashboardController extends Controller
 
         $barChartEarnings = $paymentsModel->getMonthlyPaidAmountsLast12Months($branchId);
 
+        // Get Quickfund summary data
+        $quickfundSummary = $accountsModel->getQuickfundSummary();
+
         $data = [
             'title' => 'Admin Dashboard',
             'page_heading' => 'Dashboard',
@@ -71,7 +75,9 @@ class DashboardController extends Controller
                     'totalUnpaidAccounts' => $totalUnpaidAccounts,
                     'totalEarnings' => $totalEarnings,
                     'totalEarningsThisMonth' => $totalEarningsThisMonth,
-                    'totalAmountDue' => $totalAmountDue
+                    'totalAmountDue' => $totalAmountDue,
+                    'totalQuickfundAccounts' => $quickfundSummary['totalQuickfundAccounts'],
+                    'totalQuickfundCost' => $quickfundSummary['totalQuickfundCost']
                 ],
                 'graph' => [
                     'barChartEarnings' => $barChartEarnings
@@ -253,6 +259,7 @@ class DashboardController extends Controller
 
         $accounts = $accountsModel
             ->where('ghlOpportunityId', $leadId)
+            ->orderBy('createdAt', 'DESC')
             ->findAll();
 
         $totalCount = $accountsModel->getTotalCount($filters);
@@ -275,9 +282,18 @@ class DashboardController extends Controller
         $accountNumber = $this->request->getPost('accountNumber');
         $accountCost = $this->request->getPost('accountCost');
         $multiplier = $this->request->getPost('multiplier');
+        $isQuickfundAccount = $this->request->getPost('isQuickfundAccount');
+        $quickfundCost = $this->request->getPost('quickfundCost');
 
         // Validate inputs
-        if (empty($leadId) || empty($serverType) || empty($accountType) || empty($accountNumber) || empty($accountCost) || empty($multiplier)) {
+        if (empty($leadId) || empty($serverType) || empty($accountType) || empty($accountNumber) || empty($accountCost) || empty($multiplier) || empty($isQuickfundAccount)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Invalid data provided.'
+            ]);
+        }
+
+        if ($isQuickfundAccount === "yes" && empty($quickfundCost)) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Invalid data provided.'
@@ -292,8 +308,13 @@ class DashboardController extends Controller
             'accountNumber' => $accountNumber,
             'accountCost' => $accountCost,
             'multiplier' => $multiplier,
+            'isQuickfundAccount' => $isQuickfundAccount,
             'createdAt' => date('Y-m-d H:i:s')
         ];
+
+        if (!empty($quickfundCost)) {
+            $data['quickfundCost'] = $quickfundCost;
+        }
 
         $accountsModel->insert($data);
 

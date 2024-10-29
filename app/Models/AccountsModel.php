@@ -24,6 +24,8 @@ class AccountsModel extends Model
         'createdAt',
         'updatedAt',
         'deletedAt',
+        'isQuickfundAccount',
+        'quickfundCost'
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -92,5 +94,14 @@ class AccountsModel extends Model
 
         // Count the total records
         return $builder->countAllResults();
+    }
+
+    // Method to get total Quickfund accounts and total Quickfund cost
+    public function getQuickfundSummary()
+    {
+        return $this->select("COUNT(*) AS totalQuickfundAccounts, COALESCE(SUM(quickfundCost), 0) AS totalQuickfundCost")
+            ->where('isQuickfundAccount', 'yes')
+            ->get()
+            ->getRowArray();
     }
 }
