@@ -87,22 +87,22 @@ class GHLOpportunitiesModel extends Model
 
     public function getOpportunitiesWithLinkedEntities(array $filters = [])
     {
-        // Initialize the query with necessary joins
+        // Initialize the query with necessary joins and calculate both total paid and total due amounts
         $builder = $this->select('
-                ghl_opportunities.*, 
-                ghl_pipelines.name AS pipelineName, 
-                ghl_stages.name AS stageName,
-                COALESCE(SUM(payments.amount), 0) AS totalPaidAmount
-            ')
+            ghl_opportunities.*, 
+            ghl_pipelines.name AS pipelineName, 
+            ghl_stages.name AS stageName,
+            COALESCE(SUM(CASE WHEN payments.paymentStatus = "paid" THEN payments.amount ELSE 0 END), 0) AS totalPaidAmount,
+            COALESCE(SUM(CASE WHEN payments.paymentStatus = "unpaid" THEN payments.amount ELSE 0 END), 0) AS totalDueAmount
+        ')
             ->join('ghl_pipelines', 'ghl_opportunities.ghlPipelineId = ghl_pipelines.ghlPipelineId')
             ->join('ghl_stages', 'ghl_opportunities.ghlStageId = ghl_stages.ghlStageId')
-            ->join('payments', 'payments.ghlOpportunityId = ghl_opportunities.ghlOpportunityId AND payments.paymentStatus = "paid"', 'left') // Left join to include leads without payments
+            ->join('payments', 'payments.ghlOpportunityId = ghl_opportunities.ghlOpportunityId', 'left') // Join payments table to calculate paid and due amounts
             ->groupBy('ghl_opportunities.ghlOpportunityId'); // Group by each lead
 
         // Apply optional filters if they exist
         if (!empty($filters)) {
             foreach ($filters as $field => $value) {
-                // Check if the value is an array, indicating we should use `whereIn`
                 if (is_array($value)) {
                     $builder->whereIn($field, $value);
                 } else {
@@ -119,24 +119,27 @@ class GHLOpportunitiesModel extends Model
         $pipelineKeys = ['pipelineName'];
         $stageKeys = ['stageName'];
 
-        // Separate opportunity, pipeline, and stage data
+        // Separate opportunity, pipeline, and stage data, and add due and paid amounts
         $result = [];
         foreach ($query as $row) {
             $opportunityData = array_intersect_key($row, array_flip($opportunityKeys));
             $pipelineData = array_intersect_key($row, array_flip($pipelineKeys));
             $stageData = array_intersect_key($row, array_flip($stageKeys));
             $totalPaidAmount = $row['totalPaidAmount'];
+            $totalDueAmount = $row['totalDueAmount']; // Add total due amount for each lead
 
             $result[] = array_merge(
                 $opportunityData,
                 ['pipeline' => $pipelineData],
                 ['stage' => $stageData],
-                ['totalPaidAmount' => $totalPaidAmount] // Add the total paid amount for each lead
+                ['totalPaidAmount' => $totalPaidAmount], // Include paid amount
+                ['totalDueAmount' => $totalDueAmount] // Include due amount
             );
         }
 
         return $result;
     }
+
 
     public function getTotalCount(array $filters = [])
     {

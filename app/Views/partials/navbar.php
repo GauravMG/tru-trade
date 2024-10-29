@@ -8,6 +8,9 @@
         <li class="nav-item d-none d-sm-inline-block">
             <a href="/dashboard" class="nav-link">Dashboard</a>
         </li>
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="/clients" class="nav-link">Clients</a>
+        </li>
     </ul>
 
     <!-- Right navbar links -->

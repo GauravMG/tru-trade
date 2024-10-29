@@ -1,36 +1,47 @@
-$(function () {
-    $("#dtClosedLeads").DataTable({
-        "paging": true,
-        "lengthChange": false,
-        "searching": false,
-        "ordering": true,
-        "info": true,
-        "autoWidth": false,
-        "responsive": true,
+function loadClientAccountsDonutChart(donutData) {
+    var donutChartCanvas = $('#donutChartClientAccounts').get(0).getContext('2d')
+    var donutOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+    }
+    //Create pie or douhnut chart
+    // You can switch between pie and douhnut using the method below.
+    new Chart(donutChartCanvas, {
+        type: 'doughnut',
+        data: donutData,
+        options: donutOptions
     })
-})
-
-function onClickViewLead(leadId) {
-    window.location.href = `/lead/${leadId}`
 }
 
-function changeBranch(value) {
-    $.ajax({
-        url: `/change-branch`,
-        method: 'POST',
-        data: {
-            branchId: value
-        },
-        success: function (response) {
-            if (response.success) {
-                window.location.href = "/dashboard"
-            } else {
-                toastr.error("Failed to change branch.")
-            }
-        },
-        error: function (xhr, status, error) {
-            console.log('Error:', error)
-            toastr.error("An error occurred.")
-        }
+function loadEarningsDonutChart(donutData) {
+    var donutChartCanvas = $('#donutChartEarnings').get(0).getContext('2d')
+    var donutOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+    }
+    //Create pie or douhnut chart
+    // You can switch between pie and douhnut using the method below.
+    new Chart(donutChartCanvas, {
+        type: 'doughnut',
+        data: donutData,
+        options: donutOptions
+    })
+}
+
+function loadEarningsBarChart(dataBarChart) {
+    var barChartCanvas = $('#barChartEarnings').get(0).getContext('2d')
+    var barChartData = $.extend(true, {}, dataBarChart)
+    barChartData.datasets[0] = dataBarChart.datasets[0]
+
+    var barChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        datasetFill: false
+    }
+
+    new Chart(barChartCanvas, {
+        type: 'bar',
+        data: barChartData,
+        options: barChartOptions
     })
 }

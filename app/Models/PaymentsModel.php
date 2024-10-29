@@ -221,4 +221,80 @@ class PaymentsModel extends Model
             ->get()
             ->getResultArray();
     }
+
+    public function getMonthlyPaidAmountsLast12Months($branchId = null)
+    {
+        // Define the date range (last 12 months including the current month)
+        $startDate = date('Y-m-01', strtotime('-11 months')); // First day of 12 months ago
+        $endDate = date('Y-m-t'); // Last day of the current month
+
+        // Initialize the query
+        $builder = $this->select("
+            DATE_FORMAT(paymentMadeOn, '%Y-%m') AS monthYear, 
+            COALESCE(SUM(amount), 0) AS totalPaidAmount
+        ")
+            ->where('paymentStatus', 'paid')
+            ->where('paymentMadeOn >=', $startDate)
+            ->where('paymentMadeOn <=', $endDate)
+            ->groupBy('monthYear') // Group by month and year
+            ->orderBy('paymentMadeOn', 'ASC'); // Sort by ascending month and year
+
+        // Optional filter by branchId if provided
+        if ($branchId) {
+            $builder->where('ghlOpportunityId IN (SELECT ghlOpportunityId FROM ghl_opportunities WHERE ghlPipelineId = ?)', [$branchId]);
+        }
+
+        // Execute the query and fetch results
+        $query = $builder->get()->getResultArray();
+
+        // Fill in missing months with 0 totals
+        $results = $this->fillMissingMonths($query);
+
+        // Format the results with label and value
+        $formattedResults = [];
+        foreach ($results as $row) {
+            $dateObj = \DateTime::createFromFormat('Y-m', $row['monthYear']);
+            $formattedResults[] = [
+                'label' => $dateObj->format('F Y'), // Format as "Month Year"
+                'value' => (float) $row['totalPaidAmount']
+            ];
+        }
+
+        return $formattedResults;
+    }
+
+    // Helper function to fill in missing months with 0 totals
+    private function fillMissingMonths($data)
+    {
+        $filledData = [];
+        $currentMonth = new \DateTime(date('Y-m-01'));
+        $interval = new \DateInterval('P1M');
+        $currentMonth->sub(new \DateInterval('P11M')); // Go back 11 months to start
+
+        for ($i = 0; $i < 12; $i++) {
+            $monthYear = $currentMonth->format('Y-m');
+            $found = false;
+
+            // Check if this monthYear exists in the result data
+            foreach ($data as $row) {
+                if ($row['monthYear'] === $monthYear) {
+                    $filledData[] = $row;
+                    $found = true;
+                    break;
+                }
+            }
+
+            // If monthYear is missing, add it with 0 total
+            if (!$found) {
+                $filledData[] = [
+                    'monthYear' => $monthYear,
+                    'totalPaidAmount' => 0
+                ];
+            }
+
+            $currentMonth->add($interval); // Move to the next month
+        }
+
+        return $filledData;
+    }
 }

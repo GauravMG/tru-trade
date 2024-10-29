@@ -47,6 +47,14 @@ if (!isset($session)) {
                         </p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="/clients" class="nav-link">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>
+                            Clients
+                        </p>
+                    </a>
+                </li>
         </nav>
         <!-- /.sidebar-menu -->
     </div>

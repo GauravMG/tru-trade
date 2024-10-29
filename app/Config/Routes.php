@@ -19,6 +19,7 @@ $routes->get('/lead/(:any)', 'DashboardController::leadSingle/$1');
 
 $routes->post('/change-branch', 'DashboardController::changeBranch');
 
+$routes->get('/clients', 'DashboardController::clients');
 $routes->get('/dashboard', 'DashboardController::index');
 $routes->get('/', 'DashboardController::index');
 

@@ -26,8 +26,6 @@ class DashboardController extends Controller
             $filters['ghl_opportunities.ghlPipelineId'] = $branchId;
         }
 
-        $leads = $ghlOpportunitiesModel->getOpportunitiesWithLinkedEntities($filters);
-
         $totalLeadCount = $ghlOpportunitiesModel->getTotalCount($filters);
 
         $filtersPaidAccounts = [
@@ -60,21 +58,55 @@ class DashboardController extends Controller
             $totalEarningsThisMonth = $resultTotalEarningsThisMonth['amount']; // This will contain the sum of the amounts
         }
 
+        $barChartEarnings = $paymentsModel->getMonthlyPaidAmountsLast12Months($branchId);
+
         $data = [
             'title' => 'Admin Dashboard',
             'page_heading' => 'Dashboard',
-            'stats' => [
-                'totalLeadCount' => $totalLeadCount,
-                'totalPaidAccounts' => $totalPaidAccounts,
-                'totalPaidAccountsWithDueAmount' => $totalPaidAccountsWithDueAmount,
-                'totalUnpaidAccounts' => $totalUnpaidAccounts,
-                'totalEarnings' => $totalEarnings,
-                'totalEarningsThisMonth' => $totalEarningsThisMonth,
-                'totalAmountDue' => $totalAmountDue
-            ],
-            'leads' => $leads
+            'data' => [
+                'stats' => [
+                    'totalLeadCount' => $totalLeadCount,
+                    'totalPaidAccounts' => $totalPaidAccounts,
+                    'totalPaidAccountsWithDueAmount' => $totalPaidAccountsWithDueAmount,
+                    'totalUnpaidAccounts' => $totalUnpaidAccounts,
+                    'totalEarnings' => $totalEarnings,
+                    'totalEarningsThisMonth' => $totalEarningsThisMonth,
+                    'totalAmountDue' => $totalAmountDue
+                ],
+                'graph' => [
+                    'barChartEarnings' => $barChartEarnings
+                ]
+            ]
         ];
         return view('dashboard', $data);
+    }
+
+    public function clients()
+    {
+        $session = session();
+        if (empty($session->get('userId'))) {
+            return redirect()->to('/login');
+        }
+        $branchId = $session->get('branchId');
+
+        $ghlOpportunitiesModel = new GHLOpportunitiesModel();
+
+        $filters['ghl_opportunities.status'] = ["open", "won"];
+
+        if (!empty($branchId)) {
+            $filters['ghl_opportunities.ghlPipelineId'] = $branchId;
+        }
+
+        $leads = $ghlOpportunitiesModel->getOpportunitiesWithLinkedEntities($filters);
+
+        $data = [
+            'title' => 'Clients',
+            'page_heading' => 'Clients',
+            'data' => [
+                'leads' => $leads
+            ]
+        ];
+        return view('clients', $data);
     }
 
     public function changeBranch()
@@ -166,6 +198,8 @@ class DashboardController extends Controller
         // Update record by ghlOpportunityId
         $ghlOpportunitiesModel->update($leadId, $dataToUpdate);
 
+        $this->fetchPayments($leadId);
+
         return $this->response->setJSON([
             'success' => true,
             'message' => 'Lead updated successfully.'
@@ -223,6 +257,8 @@ class DashboardController extends Controller
         ];
 
         $accountsModel->insert($data);
+
+        $this->fetchPayments($leadId);
 
         return $this->response->setJSON([
             'success' => true,

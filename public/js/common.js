@@ -38,3 +38,24 @@ function formatDateWithoutTime(dateStr) {
 function addKInAmount(amount) {
     return `${amount / 1000}K`
 }
+
+function changeBranch(value) {
+    $.ajax({
+        url: `/change-branch`,
+        method: 'POST',
+        data: {
+            branchId: value
+        },
+        success: function (response) {
+            if (response.success) {
+                window.location.href = "/dashboard"
+            } else {
+                toastr.error("Failed to change branch.")
+            }
+        },
+        error: function (xhr, status, error) {
+            console.log('Error:', error)
+            toastr.error("An error occurred.")
+        }
+    })
+}
