@@ -6,6 +6,7 @@ use CodeIgniter\Controller;
 use App\Models\GHLOpportunitiesModel;
 use App\Models\AccountsModel;
 use App\Models\PaymentsModel;
+use App\Models\DocumentsModel;
 
 class DashboardController extends Controller
 {
@@ -212,45 +213,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function updateContract($leadId)
-    {
-        $contract = $this->request->getFile('contract');
-
-        if (!$contract || !$contract->isValid()) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Invalid file or no file uploaded.'
-            ]);
-        }
-
-        try {
-            // Generate a unique name for the file and move it to the writable/uploads folder
-            $newName = $contract->getRandomName();
-            $contract->move(ROOTPATH . 'public/uploads', $newName);
-
-            $ghlOpportunitiesModel = new GHLOpportunitiesModel();
-
-            // Prepare the data to update
-            $dataToUpdate = [
-                'contractLink' => base_url("uploads/{$newName}"),
-                'updatedAt' => date('Y-m-d H:i:s')
-            ];
-
-            // Update record by ghlOpportunityId
-            $ghlOpportunitiesModel->update($leadId, $dataToUpdate);
-
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Contract uploaded successfully'
-            ]);
-        } catch (\Exception $e) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Contract upload failed: ' . $e->getMessage()
-            ]);
-        }
-    }
-
     public function fetchAccounts($leadId)
     {
         $accountsModel = new AccountsModel();
@@ -432,5 +394,77 @@ class DashboardController extends Controller
             'success' => true,
             'message' => "Payment recorded successfully"
         ]);
+    }
+
+    public function fetchDocuments($leadId)
+    {
+        $documentsModel = new DocumentsModel();
+
+        $filters['documents.ghlOpportunityId'] = $leadId;
+
+        $documents = $documentsModel
+            ->where('ghlOpportunityId', $leadId)
+            ->orderBy('createdAt', 'DESC')
+            ->findAll();
+
+        $totalCount = $documentsModel->getTotalCount($filters);
+
+        $response = [
+            'success' => true,
+            'message' => 'All documents',
+            'total' => $totalCount,
+            'data'    => $documents
+        ];
+        return $this->response->setJSON($response);
+    }
+
+    public function uploadDocument($leadId)
+    {
+        $documentType = $this->request->getPost('documentType');
+
+        // Validate inputs
+        if (empty($documentType)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Invalid data provided.'
+            ]);
+        }
+
+        $document = $this->request->getFile('document');
+
+        if (!$document || !$document->isValid()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Invalid file or no file uploaded.'
+            ]);
+        }
+
+        try {
+            // Generate a unique name for the file and move it to the writable/uploads folder
+            $newName = $document->getRandomName();
+            $document->move(ROOTPATH . 'public/uploads', $newName);
+
+            $documentsModel = new DocumentsModel();
+
+            // Prepare the data to create
+            $data = [
+                'ghlOpportunityId' => $leadId,
+                'documentType' => $documentType,
+                'documentLink' => base_url("uploads/{$newName}"),
+                'createdAt' => date('Y-m-d H:i:s')
+            ];
+    
+            $documentsModel->insert($data);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Document uploaded successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Document upload failed: ' . $e->getMessage()
+            ]);
+        }
     }
 }

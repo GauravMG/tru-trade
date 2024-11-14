@@ -12,7 +12,9 @@ $routes->get('/lead/(:any)/fetch-payments', 'DashboardController::fetchPayments/
 $routes->post('/lead/(:any)/create-account', 'DashboardController::createAccount/$1');
 $routes->get('/lead/(:any)/fetch-accounts', 'DashboardController::fetchAccounts/$1');
 
-$routes->post('/lead/(:any)/update-contract', 'DashboardController::updateContract/$1');
+$routes->post('/lead/(:any)/upload-document', 'DashboardController::uploadDocument/$1');
+$routes->get('/lead/(:any)/fetch-documents', 'DashboardController::fetchDocuments/$1');
+
 $routes->post('/lead/(:any)/update-details', 'DashboardController::updateDetails/$1');
 $routes->get('/lead/(:any)/fetch-details', 'DashboardController::fetchDetails/$1');
 

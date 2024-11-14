@@ -5,21 +5,7 @@
 <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/datatables-responsive/css/responsive.bootstrap4.min.css'); ?>">
 <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/datatables-buttons/css/buttons.bootstrap4.min.css'); ?>">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
-<style>
-        #viewerContract {
-            width: 100%;
-            height: calc(100vh - 100px); /* Adjust height according to viewport, leaving space for the header */
-            border: 1px solid #ccc;
-            overflow: auto;
-            display: none; /* Initially hidden */
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%; /* Make iframe take full height */
-            border: none; /* Remove border from iframe */
-        }
-    </style>
+<link rel="stylesheet" href="<?= base_url('css/lead-single.css'); ?>">
 <?= $this->endSection(); ?>
 
 <?= $this->section('content'); ?>
@@ -38,7 +24,7 @@
                         <a class="nav-link" id="manage-payments-tab" data-toggle="pill" href="#manage-payments" role="tab" aria-controls="manage-payments" aria-selected="false">Manage Payments</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="manage-contracts-tab" data-toggle="pill" href="#manage-contracts" role="tab" aria-controls="manage-contracts" aria-selected="false">Contract Details</a>
+                        <a class="nav-link" id="manage-documents-tab" data-toggle="pill" href="#manage-documents" role="tab" aria-controls="manage-documents" aria-selected="false">Documents</a>
                     </li>
                 </ul>
             </div>
@@ -349,29 +335,38 @@
                     </div>
                     <!-- end tab - manage payments -->
 
-                    <!-- start tab - contract details -->
-                    <div class="tab-pane fade" id="manage-contracts" role="tabpanel" aria-labelledby="manage-contracts-tab">
+                    <!-- start tab - documents -->
+                    <div class="tab-pane fade" id="manage-documents" role="tabpanel" aria-labelledby="manage-documents-tab">
                         <div class="overlay-wrapper">
-                            <div id="manage-contracts-loader" class="overlay"><i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                            <div id="manage-documents-loader" class="overlay"><i class="fas fa-3x fa-sync-alt fa-spin"></i>
                                 <div class="text-bold pt-2">Loading...</div>
                             </div>
-                            <div id="manage-contracts-content">
-                                <div class="card">
+                            <div id="manage-documents-content" class="row">
+                                <div class="card document-card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Upload new document</h3>
+                                    </div>
                                     <div class="card-body">
-                                        <div class="form-group col-md-8" id="uploadContractContainer">
-                                            <label for="contract">Upload Contract</label>
-                                            <div class="input-group">
+                                        <div class="form-group">
+                                            <label for="documentType">Document Type</label>
+                                            <select class="form-control" id="documentType" name="documentType">
+                                                <option value="-">-- Select Type --</option>
+                                                <option value="contract">Contract</option>
+                                                <option value="intake">Intake</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" id="uploadDocumentContainer">
+                                            <label for="document">Upload Document</label>
+                                            <div class="input-group document-upload-input-group">
                                                 <div class="custom-file">
-                                                    <input type="file" class="custom-file-input" id="contract" accept=".pdf,image/*">
-                                                    <label class="custom-file-label" for="contract">Choose file</label>
+                                                    <input type="file" class="custom-file-input" id="document" accept=".pdf,image/*">
+                                                    <label class="custom-file-label" for="document">Choose file</label>
                                                 </div>
                                                 <div class="input-group-append">
-                                                    <span class="input-group-text" style="cursor: pointer;" onclick="uploadContract()">Upload</span>
+                                                    <span class="input-group-text" style="cursor: pointer;" onclick="uploadDocument()">Upload</span>
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div id="viewerContract"></div>
                                     </div>
                                     <!-- /.card-body -->
                                 </div>
@@ -379,7 +374,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- end tab - contract details -->
+                    <!-- end tab - documents -->
                 </div>
             </div>
             <!-- /.card -->

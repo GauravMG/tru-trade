@@ -66,9 +66,6 @@ $branchId = $session->get('branchId');
                                 <td>
                                     <div style="display: flex; justify-content: space-around;">
                                         <span onclick="onClickViewLead(<?= $lead['ghlOpportunityId']; ?>)"><i class="fa fa-eye view-icon"></i></span>
-                                        <?php if (!empty($lead['contractLink'])) { ?>
-                                            <span onclick="onClickDownloadFile('<?= $lead['contractLink']; ?>')"><i class="fa fa-download view-icon"></i></span>
-                                        <?php } ?>
                                     </div>
                                 </td>
                             </tr>

@@ -15,8 +15,8 @@ $(document).ready(function () {
             fetchAccounts(targetTabId)
         } else if (targetTabId.replace("#", "") === "manage-payments") {
             fetchPayments(targetTabId)
-        } else if (targetTabId.replace("#", "") === "manage-contracts") {
-            fetchContract(targetTabId)
+        } else if (targetTabId.replace("#", "") === "manage-documents") {
+            fetchDocuments(targetTabId)
         }
     })
 
@@ -71,7 +71,7 @@ $(document).ready(function () {
         })
     })
 
-    $('#contract').on('change', function () {
+    $('#document').on('change', function () {
         const fileName = $(this).val().split('\\').pop(); // Get the file name
         $(this).next('.custom-file-label').html(fileName); // Set the file name in the label
     });
@@ -431,18 +431,18 @@ function savePaymentDetails() {
     })
 }
 
-function displayFile(filePath) {
+function displayFile(filePath, divId) {
     const extension = filePath.split('.').pop().toLowerCase();
 
     if (extension === 'pdf') {
         // Display PDF
-        $('#viewerContract').show().html('<iframe src="' + filePath + '" width="100%" height="100%"></iframe>');
+        $(`#${divId}`).show().html('<iframe src="' + filePath + '" width="100%" height="100%"></iframe>');
     } else if (extension === 'docx') {
         // Display DOCX
         loadDocx(filePath);
     } else if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) {
         // Display Image
-        $('#viewerContract').show().html('<img src="' + filePath + '" width="100%" height="100%" />');
+        $(`#${divId}`).show().html('<img src="' + filePath + '" width="100%" height="100%" />');
     } else {
         alert('Unsupported file type.');
     }
@@ -471,9 +471,9 @@ function loadDocx(filePath) {
         });
 }
 
-function fetchContract(targetTabId) {
+function fetchDocuments(targetTabId) {
     $.ajax({
-        url: `/lead/${leadId}/fetch-details`,
+        url: `/lead/${leadId}/fetch-documents`,
         method: "GET",
         data: {},
         beforeSend: function () { },
@@ -486,17 +486,50 @@ function fetchContract(targetTabId) {
                 return
             }
 
-            if ((response.data.leadDetails?.contractLink ?? "").trim() === "") {
-                document.getElementById("uploadContractContainer").style.display = "block"
-                document.getElementById("viewerContract").style.display = "none"
-                document.getElementById("viewerContract").innerHTML = ""
-
-                return false
+            const documentViewerContainer = document.getElementById("manage-documents-content")
+            
+            while (documentViewerContainer.children.length > 1) {
+                documentViewerContainer.removeChild(documentViewerContainer.firstElementChild)
             }
 
-            document.getElementById("uploadContractContainer").style.display = "none"
+            for (let item of response.data) {
+                const viewerDivId = `viewerDocument_${item.documentId}`
 
-            displayFile(response.data.leadDetails.contractLink)
+                const html = `
+                    <div class="card document-card">
+                        <div class="card-header">
+                            <h3 class="card-title">${capitalizeFirstLetter(item.documentType)}</h3>
+                            <div>
+                                <a target="_blank" href="${item.documentLink}"><i class="fa fa-eye view-icon"></i></a>
+                                <a onclick="onClickDownloadFile('${item.documentLink}')"><i class="fa fa-download view-icon"></i></a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="${viewerDivId}" class="viewer-document"></div>
+                        </div>
+                    </div>
+                `
+                // Create a temporary container to hold the HTML string as a DOM element
+                const tempContainer = document.createElement('div');
+                tempContainer.innerHTML = html;
+
+                // Get the element to prepend
+                const newElement = tempContainer.firstElementChild;
+
+                // Find the last child of the parent div
+                const lastElement = documentViewerContainer.lastElementChild;
+
+                // Insert the new element before the last child
+                if (lastElement) {
+                    documentViewerContainer.insertBefore(newElement, lastElement);
+                } else {
+                    // If there is no last element, just append it as the first child
+                    documentViewerContainer.appendChild(newElement);
+                }
+                
+                displayFile(item.documentLink, viewerDivId)
+            }
+
         },
         error: function (error) {
             console.log(`error`, error)
@@ -505,12 +538,18 @@ function fetchContract(targetTabId) {
     })
 }
 
-function uploadContract() {
-    const fileInput = document.getElementById('contract')
+function uploadDocument() {
+    const documentType = document.getElementById('documentType').value
+    const fileInput = document.getElementById('document')
+
+    if ((documentType ?? "").trim() === "") {
+        toastr.error("Please select document type")
+        return
+    }
 
     if (fileInput.files.length === 0) {
         toastr.error("Please select a file")
-        return;
+        return
     }
 
     const file = fileInput.files[0];
@@ -530,24 +569,29 @@ function uploadContract() {
 
     let formData = new FormData()
 
-    formData.append('contract', fileInput.files[0])
+    formData.append('documentType', documentType)
+    formData.append('document', fileInput.files[0])
 
     $.ajax({
-        url: `/lead/${leadId}/update-contract`,
+        url: `/lead/${leadId}/upload-document`,
         method: 'POST',
         data: formData,
         processData: false,
         contentType: false,
         beforeSend: function () {
-            $('#manage-contracts-loader').fadeIn()
+            $('#manage-documents-loader').fadeIn()
         },
         complete: function () {
-            $('#manage-contracts-loader').fadeOut()
-            fetchContract("#manage-contracts")
+            $('#manage-documents-loader').fadeOut()
+            fetchDocuments("#manage-documents")
         },
         success: function (response) {
             if (response.success) {
                 toastr.success(response.message)
+
+                document.getElementById('documentType').value = "-"
+                document.getElementById('document').value = ""
+                $("#document").next('.custom-file-label').html("Choose file"); // Set the file name in the label
             } else {
                 toastr.error(response.message)
             }
